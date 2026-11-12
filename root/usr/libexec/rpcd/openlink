@@ -1,0 +1,54 @@
+#!/usr/bin/lua
+local uci = require "luci.model.uci".cursor()
+
+local function get_status()
+    local f = io.open("/var/run/voucher.pid", "r")
+    if f then f:close() return { status = "running" } end
+    return { status = "stopped" }
+end
+
+local function get_config()
+    local c = {}
+    uci:foreach("openlink", "settings", function(s)
+        for k, v in pairs(s) do c[k] = v end
+    end)
+    return c
+end
+
+local function set_config(args)
+    uci:foreach("openlink", "settings", function(s)
+        for k, v in pairs(args) do uci:set("openlink", s[".name"], k, v) end
+    end)
+    uci:commit("openlink")
+    return { success = true }
+end
+
+local function start_service()
+    os.execute("/etc/init.d/voucher enable; /etc/init.d/voucher start")
+    os.execute("/etc/init.d/nodogsplash enable; /etc/init.d/nodogsplash restart")
+    return { success = true }
+end
+
+local function stop_service()
+    os.execute("/etc/init.d/voucher stop; /etc/init.d/voucher disable")
+    os.execute("/etc/init.d/nodogsplash stop; /etc/init.d/nodogsplash disable")
+    return { success = true }
+end
+
+local methods = {
+    get_status = get_status, get_config = get_config,
+    set_config = set_config, start_service = start_service,
+    stop_service = stop_service
+}
+
+local ubus = require "ubus"
+local conn = ubus.connect()
+if not conn then error("ubus connect failed") end
+conn:add({ openlink = {
+    get_status = { call = function(req) return ubus.call_reply(methods.get_status()) end },
+    get_config = { call = function(req) return ubus.call_reply(methods.get_config()) end },
+    set_config = { call = function(req) return ubus.call_reply(methods.set_config(req.args)) end },
+    start_service = { call = function(req) return ubus.call_reply(methods.start_service()) end },
+    stop_service = { call = function(req) return ubus.call_reply(methods.stop_service()) end }
+}})
+conn:listen()

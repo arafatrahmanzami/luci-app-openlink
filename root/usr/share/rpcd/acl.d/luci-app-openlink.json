@@ -1,0 +1,11 @@
+{
+    "luci-app-openlink": {
+        "description": "Grant UCI access for luci-app-openlink",
+        "read": { 
+            "uci": [ "openlink", "nodogsplash", "firewall" ] 
+        },
+        "write": { 
+            "uci": [ "openlink", "nodogsplash", "firewall" ] 
+        }
+    }
+}

@@ -1,0 +1,8 @@
+{
+  "admin/services/openlink": {
+    "title": "OpenLink Captive Portal",
+    "order": 60,
+    "action": { "type": "view", "path": "openlink/settings" },
+    "depends": { "acl": [ "luci-app-openlink" ] }
+  }
+}

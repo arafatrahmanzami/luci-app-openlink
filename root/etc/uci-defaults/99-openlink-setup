@@ -1,0 +1,26 @@
+#!/bin/sh
+# Prepare the redirect splash page for Nodogsplash, but leave Nodogsplash disabled
+cat << EOHTML > /etc/nodogsplash/htdocs/splash.html
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Connecting...</title>
+<meta http-equiv="refresh" content="0; url=http://192.168.254.1:7891/?ip=\$clientip&amp;mac=\$clientmac&amp;token=\$tok" />
+</head>
+<body><p>Please wait, you are being redirected to the login page...</p></body>
+</html>
+EOHTML
+
+uci -q batch <<-EOI
+    set nodogsplash.@nodogsplash[0].splashpage='splash.html'
+    set nodogsplash.@nodogsplash[0].binauth='/opt/voucher/binauth.sh'
+    set nodogsplash.@nodogsplash[0].enabled='0'
+    commit nodogsplash
+EOI
+
+# Explicitly ensure services are disabled on fresh install
+/etc/init.d/voucher disable
+/etc/init.d/nodogsplash disable
+
+exit 0
